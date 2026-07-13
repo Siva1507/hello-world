@@ -1,0 +1,30 @@
+name: Expense App CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: expense-docker
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build Backend Image
+        run: |
+          docker build -t expense-backend ./backend
+
+      - name: Build Frontend Image
+        run: |
+          docker build -t expense-frontend ./frontend
+
+      - name: Build MySQL Image
+        run: |
+          docker build -t expense-mysql ./mysql
