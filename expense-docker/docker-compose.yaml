@@ -1,44 +1,38 @@
-networks:
-  expense: {}
-  # docker volume create mysql
-volumes:
-  mysql:
 services:
   backend:
-    build:
-      context: ./backend
+    image: 971598352774.dkr.ecr.ap-south-1.amazonaws.com/expense-backend:latest
     environment:
       DB_HOST: mysql
       DB_USER: root
       DB_PASSWORD: ExpenseApp@1
     command: sh -c "sleep 30 && node /opt/backend/index.js"
     networks:
-    - expense
+      - expense
     container_name: backend
     depends_on:
-    - mysql
+      - mysql
 
-  # docker run -d --name mysql --network expense -v mysql:/var/lib/mysql mysql:1.0.0
   mysql:
-    build:
-      context: ./mysql
+    image: 971598352774.dkr.ecr.ap-south-1.amazonaws.com/expense-mysql:latest
     restart: always
     networks:
-    - expense
+      - expense
     container_name: mysql
     volumes:
-    - mysql:/var/lib/mysql
+      - mysql:/var/lib/mysql
 
   frontend:
-    build:
-      context: ./frontend 
-    #image: joindevops/frontend:1.0.0
+    image: 971598352774.dkr.ecr.ap-south-1.amazonaws.com/expense-frontend:latest
     networks:
-    - expense
+      - expense
     container_name: frontend
     ports:
-    - 80:80
+      - "80:80"
     depends_on:
-    - backend
-  
-  
+      - backend
+
+networks:
+  expense:
+
+volumes:
+  mysql:
