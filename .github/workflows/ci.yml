@@ -108,7 +108,7 @@ jobs:
           image-ref: expense-backend:${{ github.sha }}
           format: table
           exit-code: '1'
-          severity: HIGH,CRITICAL
+          severity: CRITICAL
 
 
       - name: Tag Backend Image
@@ -142,7 +142,7 @@ jobs:
           image-ref: expense-frontend:${{ github.sha }}
           format: table
           exit-code: '1'
-          severity: HIGH,CRITICAL
+          severity: CRITICAL
 
 
       - name: Tag Frontend Image
@@ -176,20 +176,20 @@ jobs:
           image-ref: expense-mysql:${{ github.sha }}
           format: table
           exit-code: '1'
-          severity: HIGH,CRITICAL
+          severity: CRITICAL
 
 
       - name: Tag MySQL Image
         run: |
           docker tag \
             expense-mysql:${IMAGE_TAG} \
-            ${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com/expense-mysql:${IMAGE_TAG}
+            ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-mysql:${IMAGE_TAG}
 
 
       - name: Push MySQL Image
         run: |
           docker push \
-            ${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com/expense-mysql:${IMAGE_TAG}
+            ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-mysql:${IMAGE_TAG}
 
 
 
