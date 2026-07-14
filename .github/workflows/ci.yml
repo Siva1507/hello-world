@@ -6,6 +6,7 @@ on:
       - main
 
 jobs:
+
   docker-build-and-push:
 
     runs-on: ubuntu-latest
@@ -19,6 +20,7 @@ jobs:
       run:
         working-directory: expense-docker
 
+
     steps:
 
       ################################
@@ -28,6 +30,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+
       ################################
       # Build Verification
       ################################
@@ -35,17 +38,35 @@ jobs:
       - name: Verify Backend
         working-directory: expense-docker/backend
         run: |
-          npm install
+          npm ci
           node --check index.js
 
-      - name: Verify Frontend Image
+
+      - name: Verify Frontend Nginx Configuration
         run: |
           docker build -t frontend-test ./frontend
-          docker run --rm frontend-test nginx -t
+
+          docker network create nginx-test
+
+          docker run -d \
+            --name backend \
+            --network nginx-test \
+            nginx:alpine
+
+          docker run --rm \
+            --network nginx-test \
+            frontend-test nginx -t
+
+          docker rm -f backend
+
+          docker network rm nginx-test
+
 
       - name: Verify MySQL Image
         run: |
           docker build -t mysql-test ./mysql
+
+
 
       ################################
       # Configure AWS Credentials
@@ -53,10 +74,15 @@ jobs:
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
+
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
           aws-region: ${{ env.AWS_REGION }}
+
+
 
       ################################
       # Login to Amazon ECR
@@ -64,6 +90,8 @@ jobs:
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
+
+
 
       ################################
       # Backend Image
@@ -75,16 +103,20 @@ jobs:
             -t expense-backend:${IMAGE_TAG} \
             ./backend
 
+
       - name: Tag Backend Image
         run: |
           docker tag \
             expense-backend:${IMAGE_TAG} \
             ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-backend:${IMAGE_TAG}
 
+
       - name: Push Backend Image
         run: |
           docker push \
             ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-backend:${IMAGE_TAG}
+
+
 
       ################################
       # Frontend Image
@@ -96,16 +128,20 @@ jobs:
             -t expense-frontend:${IMAGE_TAG} \
             ./frontend
 
+
       - name: Tag Frontend Image
         run: |
           docker tag \
             expense-frontend:${IMAGE_TAG} \
             ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-frontend:${IMAGE_TAG}
 
+
       - name: Push Frontend Image
         run: |
           docker push \
             ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-frontend:${IMAGE_TAG}
+
+
 
       ################################
       # MySQL Image
@@ -117,42 +153,59 @@ jobs:
             -t expense-mysql:${IMAGE_TAG} \
             ./mysql
 
+
       - name: Tag MySQL Image
         run: |
           docker tag \
             expense-mysql:${IMAGE_TAG} \
             ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-mysql:${IMAGE_TAG}
 
+
       - name: Push MySQL Image
         run: |
           docker push \
             ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-mysql:${IMAGE_TAG}
+
+
 
       ################################
       # Deploy to EC2
       ################################
 
       - name: Deploy to EC2
+
         uses: appleboy/ssh-action@v1.0.3
+
         with:
+
           host: ${{ secrets.EC2_HOST }}
+
           username: ${{ secrets.EC2_USERNAME }}
+
           key: ${{ secrets.EC2_SSH_KEY }}
 
+
           script: |
+
             cd /home/ubuntu/hello-world/expense-docker
 
             git pull origin main
 
             export IMAGE_TAG=${{ github.sha }}
+
             echo "Deploying image tag: $IMAGE_TAG"
+
 
             docker-compose config | grep image
 
+
             docker-compose pull
+
 
             docker-compose down
 
+
             docker-compose up -d
+
 
             docker image prune -f
