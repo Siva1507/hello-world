@@ -141,7 +141,9 @@ jobs:
             git pull origin main    
 
             export IMAGE_TAG=${{ github.sha }}
-
+            echo "Deploying image tag: $IMAGE_TAG"
+            
+            docker-compose config | grep image
             
             docker-compose pull
 
