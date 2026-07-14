@@ -46,6 +46,54 @@ jobs:
           docker push \
           ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-backend:latest
 
+name: Expense App CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  docker-build-and-push:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ap-south-1
+      AWS_ACCOUNT_ID: 971598352774
+
+    defaults:
+      run:
+        working-directory: expense-docker
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Backend Image
+        run: |
+          docker build -t expense-backend ./backend
+
+      - name: Tag Backend Image
+        run: |
+          docker tag expense-backend:latest \
+          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-backend:latest
+
+      - name: Push Backend Image
+        run: |
+          docker push \
+          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-backend:latest
+
       - name: Build Frontend Image
         run: |
           docker build -t expense-frontend ./frontend
