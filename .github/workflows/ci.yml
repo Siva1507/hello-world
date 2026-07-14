@@ -55,21 +55,18 @@ jobs:
           docker tag expense-frontend:latest \
           ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-frontend:latest
 
-      - name: Push Frontend Image
-        run: |
-          docker push \
-          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-frontend:latest
-
-      - name: Build MySQL Image
-        run: |
-          docker build -t expense-mysql ./mysql
-
-      - name: Tag MySQL Image
-        run: |
-          docker tag expense-mysql:latest \
-          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-mysql:latest
-
       - name: Push MySQL Image
         run: |
           docker push \
           ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-mysql:latest
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/hello-world/expense-docker
+            docker compose pull
+            docker compose up -d
