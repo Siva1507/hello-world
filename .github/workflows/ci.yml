@@ -139,11 +139,14 @@ jobs:
             cd /home/ubuntu/hello-world/expense-docker
 
             git pull origin main    
-            
+
             export IMAGE_TAG=${{ github.sha }}
 
+            
             docker-compose pull
 
             docker-compose down
 
             docker-compose up -d
+  
+            docker image prune -f
