@@ -1,6 +1,6 @@
 services:
   backend:
-    image: 971598352774.dkr.ecr.ap-south-1.amazonaws.com/expense-backend:latest
+    image: 971598352774.dkr.ecr.ap-south-1.amazonaws.com/expense-backend:${IMAGE_TAG}
     environment:
       DB_HOST: mysql
       DB_USER: root
@@ -13,7 +13,7 @@ services:
       - mysql
 
   mysql:
-    image: 971598352774.dkr.ecr.ap-south-1.amazonaws.com/expense-mysql:latest
+    image: 971598352774.dkr.ecr.ap-south-1.amazonaws.com/expense-mysql:${IMAGE_TAG}
     restart: always
     networks:
       - expense
@@ -22,7 +22,7 @@ services:
       - mysql:/var/lib/mysql
 
   frontend:
-    image: 971598352774.dkr.ecr.ap-south-1.amazonaws.com/expense-frontend:latest
+    image: 971598352774.dkr.ecr.ap-south-1.amazonaws.com/expense-frontend:${IMAGE_TAG}
     networks:
       - expense
     container_name: frontend
