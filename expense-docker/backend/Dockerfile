@@ -1,4 +1,4 @@
-FROM node:20.18.3-alpine3.21 AS builder
+FROM node:20.18.3-alpine AS builder
 
 WORKDIR /opt/backend
 
@@ -8,7 +8,7 @@ RUN npm ci
 COPY *.js ./
 
 
-FROM node:20.18.3-alpine3.21
+FROM node:20.18.3-alpine
 
 RUN addgroup -S expense && adduser -S expense -G expense && \
     mkdir /opt/backend && \
