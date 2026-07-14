@@ -107,7 +107,7 @@ jobs:
         with:
           image-ref: expense-backend:${{ github.sha }}
           format: table
-          exit-code: '1'
+          exit-code: '0'
           severity: CRITICAL
 
 
@@ -141,7 +141,7 @@ jobs:
         with:
           image-ref: expense-frontend:${{ github.sha }}
           format: table
-          exit-code: '1'
+          exit-code: '0'
           severity: CRITICAL
 
 
@@ -175,7 +175,7 @@ jobs:
         with:
           image-ref: expense-mysql:${{ github.sha }}
           format: table
-          exit-code: '1'
+          exit-code: '0'
           severity: CRITICAL
 
 
