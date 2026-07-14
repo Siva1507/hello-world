@@ -1,4 +1,4 @@
-name: Expense App CI
+name: Expense App CI/CD
 
 on:
   push:
@@ -6,23 +6,29 @@ on:
       - main
 
 jobs:
+
   docker-build-and-push:
+
     runs-on: ubuntu-latest
 
     env:
       AWS_REGION: ap-south-1
       AWS_ACCOUNT_ID: 971598352774
+      IMAGE_TAG: ${{ github.sha }}
 
     defaults:
       run:
         working-directory: expense-docker
 
+
     steps:
 
+      # Checkout code
       - name: Checkout Repository
         uses: actions/checkout@v4
 
 
+      # AWS Login
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -31,80 +37,111 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
 
+      # ECR Login
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
 
-      # ---------------- Backend ----------------
+
+      ################################
+      # Backend Image
+      ################################
 
       - name: Build Backend Image
         run: |
-          docker build -t expense-backend ./backend
+          docker build \
+          -t expense-backend:${IMAGE_TAG} \
+          ./backend
 
 
       - name: Tag Backend Image
         run: |
-          docker tag expense-backend:latest \
-          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-backend:latest
+          docker tag \
+          expense-backend:${IMAGE_TAG} \
+          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-backend:${IMAGE_TAG}
 
 
       - name: Push Backend Image
         run: |
           docker push \
-          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-backend:latest
+          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-backend:${IMAGE_TAG}
 
 
 
-      # ---------------- Frontend ----------------
+      ################################
+      # Frontend Image
+      ################################
 
       - name: Build Frontend Image
         run: |
-          docker build -t expense-frontend ./frontend
+          docker build \
+          -t expense-frontend:${IMAGE_TAG} \
+          ./frontend
 
 
       - name: Tag Frontend Image
         run: |
-          docker tag expense-frontend:latest \
-          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-frontend:latest
+          docker tag \
+          expense-frontend:${IMAGE_TAG} \
+          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-frontend:${IMAGE_TAG}
 
 
       - name: Push Frontend Image
         run: |
           docker push \
-          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-frontend:latest
+          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-frontend:${IMAGE_TAG}
 
 
 
-      # ---------------- MySQL ----------------
+      ################################
+      # MySQL Image
+      ################################
 
       - name: Build MySQL Image
         run: |
-          docker build -t expense-mysql ./mysql
+          docker build \
+          -t expense-mysql:${IMAGE_TAG} \
+          ./mysql
 
 
       - name: Tag MySQL Image
         run: |
-          docker tag expense-mysql:latest \
-          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-mysql:latest
+          docker tag \
+          expense-mysql:${IMAGE_TAG} \
+          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-mysql:${IMAGE_TAG}
 
 
       - name: Push MySQL Image
         run: |
           docker push \
-          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-mysql:latest
+          ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-mysql:${IMAGE_TAG}
 
 
 
-      # ---------------- Deployment ----------------
+      ################################
+      # Deploy to EC2
+      ################################
 
       - name: Deploy to EC2
+
         uses: appleboy/ssh-action@v1.0.3
+
         with:
+
           host: ${{ secrets.EC2_HOST }}
+
           username: ${{ secrets.EC2_USERNAME }}
+
           key: ${{ secrets.EC2_SSH_KEY }}
+
           script: |
+
             cd /home/ubuntu/hello-world/expense-docker
+
+            export IMAGE_TAG=${{ github.sha }}
+
             docker-compose pull
+
             docker-compose down
+
             docker-compose up -d
