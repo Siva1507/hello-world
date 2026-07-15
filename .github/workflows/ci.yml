@@ -190,47 +190,50 @@ jobs:
         run: |
           docker push \
             ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-mysql:${IMAGE_TAG}
-
-
-
       ################################
       # Deploy to EC2
       ################################
 
       - name: Deploy to EC2
-
         uses: appleboy/ssh-action@v1.0.3
 
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          AWS_REGION: ap-south-1
+          AWS_ACCOUNT_ID: 971598352774
+
         with:
-
           host: ${{ secrets.EC2_HOST }}
-
           username: ${{ secrets.EC2_USERNAME }}
-
           key: ${{ secrets.EC2_SSH_KEY }}
 
+          envs: IMAGE_TAG,AWS_REGION,AWS_ACCOUNT_ID
 
           script: |
+            set -e
 
             cd /home/ubuntu/hello-world/expense-docker
 
             git pull origin main
 
-            export IMAGE_TAG=${{ github.sha }}
+            echo "IMAGE_TAG=${IMAGE_TAG}" > .env
 
-            echo "Deploying image tag: $IMAGE_TAG"
+            echo "Deploying image tag: ${IMAGE_TAG}"
 
+            cat .env
 
             docker-compose config | grep image
 
+            aws ecr get-login-password --region ${AWS_REGION} | \
+            docker login \
+              --username AWS \
+              --password-stdin \
+              ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
             docker-compose pull
 
-
-            docker-compose down
-
-
             docker-compose up -d
 
+            docker-compose ps
 
             docker image prune -f
