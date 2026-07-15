@@ -5,7 +5,7 @@
 - **Minimal Base Images:** Use minimal base images (like `alpine`) to reduce the attack surface and image size.
 
 ## 2. Keep Images Small
-- **Multi-Stage Builds:** Use multi-stage builds to minimize the final image size by only including necessary components.
+- **Multi-Stage Builds:** Use multi-stage builds to minimize the final image size by only including necessary components yes.
 - **Remove Unnecessary Files:** Clean up package lists, cache files, and other unnecessary files to keep the image lean.
 
 ## 3. Tag Images Properly
