@@ -222,7 +222,7 @@ jobs:
 
             cat .env
 
-            docker-compose config | grep image
+            docker compose config | grep image
 
             aws ecr get-login-password --region ${AWS_REGION} | \
             docker login \
@@ -230,10 +230,9 @@ jobs:
               --password-stdin \
               ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
-            docker-compose pull
-
-            docker-compose up -d
-
-            docker-compose ps
+            docker compose pull
+            docker compose down --remove-orphans   
+            docker compose up -d
+            docker compose ps
 
             docker image prune -f
