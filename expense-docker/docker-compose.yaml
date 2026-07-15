@@ -6,30 +6,41 @@ services:
       DB_USER: root
       DB_PASSWORD: ExpenseApp@1
     command: sh -c "sleep 30 && node /opt/backend/index.js"
-    networks:
-      - expense
     container_name: backend
     depends_on:
       - mysql
+    networks:
+      - expense
 
   mysql:
     image: 971598352774.dkr.ecr.ap-south-1.amazonaws.com/expense-mysql:${IMAGE_TAG}
     restart: always
-    networks:
-      - expense
     container_name: mysql
     volumes:
       - mysql:/var/lib/mysql
+    networks:
+      - expense
 
   frontend:
     image: 971598352774.dkr.ecr.ap-south-1.amazonaws.com/expense-frontend:${IMAGE_TAG}
-    networks:
-      - expense
     container_name: frontend
-    ports:
-      - "80:80"
     depends_on:
       - backend
+    networks:
+      - expense
+
+  nginx:
+    image: nginx:1.28-alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - expense
 
 networks:
   expense:
