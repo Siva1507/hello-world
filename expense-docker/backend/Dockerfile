@@ -1,3 +1,13 @@
+FROM node:20-alpine AS builder
+
+WORKDIR /opt/backend
+
+COPY package*.json ./
+
+RUN npm ci
+
+COPY *.js ./
+
 FROM node:20-alpine
 
 RUN apk add --no-cache curl
@@ -11,9 +21,11 @@ ENV DB_HOST=mysql
 
 WORKDIR /opt/backend
 
-USER expense
-
 COPY --from=builder /opt/backend /opt/backend
+
+RUN chown -R expense:expense /opt/backend
+
+USER expense
 
 HEALTHCHECK --interval=30s \
             --timeout=5s \
@@ -21,4 +33,4 @@ HEALTHCHECK --interval=30s \
             --retries=3 \
 CMD curl -f http://localhost:8080/health || exit 1
 
-CMD ["node","index.js"]
+CMD ["node", "index.js"]
