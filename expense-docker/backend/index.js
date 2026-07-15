@@ -18,7 +18,11 @@ app.use(cors());
 
 //Health Checking
 app.get('/health',(req,res)=>{
-    res.json("This is the health check for blue-3.0.0");
+
+    res.status(200).json({
+        "status": "UP",
+        version: "3.0.0",
+    })
 });
 
 // ADD TRANSACTION
@@ -28,7 +32,7 @@ app.post('/transaction', (req,res)=>{
         t=moment().unix()
         console.log("{ \"timestamp\" : %d, \"msg\", \"Adding Expense\", \"amount\" : %d, \"Description\": \"%s\" }", t, req.body.amount, req.body.desc);
         var success = transactionService.addTransaction(req.body.amount,req.body.desc);
-        if (success = 200) res.json({ message: 'added transaction successfully'});
+        if (success == 200) res.json({ message: 'added transaction successfully'});
     }catch (err){
         res.json({ message: 'something went wrong', error : err.message});
     }
