@@ -72,6 +72,7 @@ services:
 
     networks:
       - expense
+
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
@@ -86,19 +87,15 @@ services:
     pid: host
 
     volumes:
-      - "/:/host:ro,rslave"   
+      - "/:/host:ro,rslave"
+
     networks:
-      - expense   
+      - expense
 
-networks:
-  expense:
-
-volumes:
-  mysql:
-prometheus:
-  image: prom/prometheus:latest
-  container_name: prometheus
-  restart: unless-stopped
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
 
     ports:
       - "9090:9090"
@@ -114,3 +111,9 @@ prometheus:
 
     networks:
       - expense
+
+networks:
+  expense:
+
+volumes:
+  mysql:
