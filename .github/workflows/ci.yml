@@ -6,9 +6,7 @@ on:
       - main
 
 jobs:
-
   docker-build-and-push:
-
     runs-on: ubuntu-latest
 
     env:
@@ -20,16 +18,13 @@ jobs:
       run:
         working-directory: expense-docker
 
-
     steps:
-
       ################################
       # Checkout Repository
       ################################
 
       - name: Checkout Repository
         uses: actions/checkout@v4
-
 
       ################################
       # Build Verification
@@ -40,7 +35,6 @@ jobs:
         run: |
           npm ci
           node --check index.js
-
 
       - name: Verify Frontend Nginx Configuration
         run: |
@@ -61,12 +55,9 @@ jobs:
 
           docker network rm nginx-test
 
-
       - name: Verify MySQL Image
         run: |
           docker build -t mysql-test ./mysql
-
-
 
       ################################
       # Configure AWS Credentials
@@ -80,16 +71,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-
-
       ################################
       # Login to Amazon ECR
       ################################
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
-
-
 
       ################################
       # Backend Image
@@ -101,15 +88,13 @@ jobs:
             -t expense-backend:${IMAGE_TAG} \
             ./backend
 
-
       - name: Scan Backend Image
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: expense-backend:${{ github.sha }}
           format: table
-          exit-code: '0'
+          exit-code: "0"
           severity: CRITICAL
-
 
       - name: Tag Backend Image
         run: |
@@ -117,13 +102,10 @@ jobs:
             expense-backend:${IMAGE_TAG} \
             ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-backend:${IMAGE_TAG}
 
-
       - name: Push Backend Image
         run: |
           docker push \
             ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-backend:${IMAGE_TAG}
-
-
 
       ################################
       # Frontend Image
@@ -135,15 +117,13 @@ jobs:
             -t expense-frontend:${IMAGE_TAG} \
             ./frontend
 
-
       - name: Scan Frontend Image
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: expense-frontend:${{ github.sha }}
           format: table
-          exit-code: '0'
+          exit-code: "0"
           severity: CRITICAL
-
 
       - name: Tag Frontend Image
         run: |
@@ -151,13 +131,10 @@ jobs:
             expense-frontend:${IMAGE_TAG} \
             ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-frontend:${IMAGE_TAG}
 
-
       - name: Push Frontend Image
         run: |
           docker push \
             ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-frontend:${IMAGE_TAG}
-
-
 
       ################################
       # MySQL Image
@@ -169,15 +146,13 @@ jobs:
             -t expense-mysql:${IMAGE_TAG} \
             ./mysql
 
-
       - name: Scan MySQL Image
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: expense-mysql:${{ github.sha }}
           format: table
-          exit-code: '0'
+          exit-code: "0"
           severity: CRITICAL
-
 
       - name: Tag MySQL Image
         run: |
@@ -185,54 +160,51 @@ jobs:
             expense-mysql:${IMAGE_TAG} \
             ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-mysql:${IMAGE_TAG}
 
-
       - name: Push MySQL Image
         run: |
           docker push \
             ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/expense-mysql:${IMAGE_TAG}
-      ################################
-      # Deploy to EC2
-      ################################
+
+            ################################
+                # Deploy to EC2
+               ################################
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
+  with:
+    host: ${{ secrets.EC2_HOST }}
+    username: ubuntu
+    key: ${{ secrets.EC2_SSH_KEY }}
+    envs: AWS_REGION,AWS_ACCOUNT_ID,IMAGE_TAG
+    script: |
+      set -e
 
-        env:
-          IMAGE_TAG: ${{ github.sha }}
-          AWS_REGION: ap-south-1
-          AWS_ACCOUNT_ID: 971598352774
+      cd /home/ubuntu/hello-world/expense-docker
 
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+      git pull origin main
 
-          envs: IMAGE_TAG,AWS_REGION,AWS_ACCOUNT_ID
+      # Create .env if it doesn't exist
+      touch .env
 
-          script: |
-            set -e
+      # Update IMAGE_TAG without deleting other variables
+      sed -i '/^IMAGE_TAG=/d' .env
+      echo "IMAGE_TAG=${IMAGE_TAG}" >> .env
 
-            cd /home/ubuntu/hello-world/expense-docker
+      echo "Deploying image tag: ${IMAGE_TAG}"
 
-            git pull origin main
+      cat .env
 
-            echo "IMAGE_TAG=${IMAGE_TAG}" > .env
+      docker compose config | grep image
 
-            echo "Deploying image tag: ${IMAGE_TAG}"
+      aws ecr get-login-password --region ${AWS_REGION} | \
+      docker login \
+        --username AWS \
+        --password-stdin \
+        ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
-            cat .env
+      docker compose pull
+      docker compose down --remove-orphans
+      docker compose up -d
+      docker compose ps
 
-            docker compose config | grep image
-
-            aws ecr get-login-password --region ${AWS_REGION} | \
-            docker login \
-              --username AWS \
-              --password-stdin \
-              ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-
-            docker compose pull
-            docker compose down --remove-orphans   
-            docker compose up -d
-            docker compose ps
-
-            docker image prune -f
+      docker image prune -f
