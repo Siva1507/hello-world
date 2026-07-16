@@ -5,9 +5,9 @@ services:
     restart: unless-stopped
 
     environment:
-      DB_HOST: mysql
-      DB_USER: root
-      DB_PASSWORD: ExpenseApp@1
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
 
     depends_on:
       - mysql
@@ -29,7 +29,7 @@ services:
           "-h",
           "localhost",
           "-uroot",
-          "-pExpenseApp@1"
+          "-p${DB_PASSWORD}"
         ]
       interval: 10s
       timeout: 5s
