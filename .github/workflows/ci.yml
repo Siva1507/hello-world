@@ -175,6 +175,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
+
+          command_timeout: 20m
           envs: AWS_REGION,AWS_ACCOUNT_ID,IMAGE_TAG
           script: |
             set -e
